@@ -1,14 +1,15 @@
 ---
-title : "Advanced Optimization Steps"
+title : "Advanced Analysis with LLM"
 date :  "2024-10-27" 
 weight : 5 
 chapter : false
 pre : " <b> 5. </b> "
 ---
-#### Introduction
-In this section, we will create **Dead Letter Queue - DLQ** to handle dead messages and **userId index** for OrderingTable to increase query speed.
 
-#### Content:
+### Advanced Analysis with LLM
 
-1. [Create SQS Dead to handle error messages](5.1-CreateSQSDead)
-2. [Create Index to increase query speed](5.2-CreateIndex)
+#### 🚧 Coming Soon
+
+This section will guide you on how to use Large Language Models (LLM) to analyze video content more deeply, answer complex questions, or summarize content based on the embeddings found.
+
+Content is being developed!

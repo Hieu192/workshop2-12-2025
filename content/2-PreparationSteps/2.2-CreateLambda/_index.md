@@ -1,185 +1,188 @@
 ---
-title : "Create IAM Roles"
+title : "Create Lambda Upload Video"
 date :  "2024-10-27" 
 weight : 2
 chapter : false
 pre : " <b> 2.2 </b> "
 ---
 
-We need to create IAM roles for Lambda functions to access DynamoDB and other AWS services.
 
-### Step 1: Create Custom Policies
+We need to create a Lambda function and modify the Lambda role to access DynamoDB and other AWS services.
 
-#### Create AllowReadProductTablePolicy1
+#### Create Lambda Function to Handle Presigned URL Generation for Video
 
-1. Access AWS Console and navigate to the **IAM** service in AWS Console.
+1. Access AWS Console and navigate to the **Lambda** service in AWS Console.
+    - From the left sidebar, select **Functions** and click **Create function**.
 
 ![](/images/2-2/01.png?featherlight=false&width=50pc)
 
-2. Click **Policies** in the left sidebar, then **Create policy**.
+2. Configure the function:
+   - Select **Author from scratch**
+   - Function name: **`video_upload`**
+   - Runtime: **Python 3.14**
+   - Architecture: **x86_64**
+   - Click **Create function**.
 
 ![](/images/2-2/02.png?featherlight=false&width=50pc)
 
-3. Select the **JSON** tab and paste the following policy:
+3. Replace the default code with the code below and Click **Deploy**:
 ![](/images/2-2/03.png?featherlight=false&width=50pc)
 
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "dynamodb:GetItem",
-                "dynamodb:Scan"
-            ],
-            "Resource": "arn:aws:dynamodb:*:*:table/ProductTable"
-        }
-    ]
-}
-```
+````python
+import os
+import json
+import uuid
+import boto3
+from datetime import datetime
+from typing import Dict, Any
 
-4. Click **Next**.
+# Environment variables
+VIDEO_BUCKET = os.environ.get("VIDEO_BUCKET", "sl-video-analysis-videos-hieu")
+TABLE_NAME = os.environ.get("TABLE_NAME", "video-analysis")
+REGION = os.environ.get("AWS_REGION", "us-east-1")
+PRESIGNED_URL_EXPIRY = int(os.environ.get("PRESIGNED_URL_EXPIRY", "3600"))
+
+# Initialize clients
+s3_client = boto3.client("s3", region_name=REGION)
+dynamodb = boto3.resource("dynamodb", region_name=REGION)
+table = dynamodb.Table(TABLE_NAME)
+
+
+def create_response(status_code: int, body: Dict[str, Any]) -> Dict:
+    """Create API Gateway response with CORS headers."""
+    return {
+        "statusCode": status_code,
+        "headers": {
+            "Content-Type": "application/json",
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, OPTIONS",
+            "Access-Control-Allow-Headers": "Content-Type"
+        },
+        "body": json.dumps(body, ensure_ascii=False)
+    }
+
+
+def lambda_handler(event, context):
+
+    print(f"Event: {json.dumps(event)}")
+    
+    # Handle OPTIONS for CORS
+    if event.get("httpMethod") == "OPTIONS":
+        return create_response(200, {"message": "OK"})
+    
+    try:
+        # Parse request body
+        body = json.loads(event.get("body", "{}"))
+        filename = body.get("filename")
+        
+        if not filename:
+            return create_response(400, {
+                "error": "Missing required field: filename"
+            })
+        
+        # Validate file extension
+        allowed_extensions = [".mp4", ".mov", ".avi", ".mkv", ".webm"]
+        file_ext = os.path.splitext(filename)[1].lower()
+        if file_ext not in allowed_extensions:
+            return create_response(400, {
+                "error": f"Invalid file type. Allowed: {allowed_extensions}"
+            })
+        
+        # Generate unique video ID
+        video_id = str(uuid.uuid4())
+        timestamp = datetime.utcnow().isoformat() + "Z"
+        
+        # S3 key for the video
+        s3_key = f"videos/{video_id}/{filename}"
+        s3_uri = f"s3://{VIDEO_BUCKET}/{s3_key}"
+        
+        # Determine content type
+        content_type_map = {
+            ".mp4": "video/mp4",
+            ".mov": "video/quicktime",
+            ".avi": "video/x-msvideo",
+            ".mkv": "video/x-matroska",
+            ".webm": "video/webm"
+        }
+        content_type = content_type_map.get(file_ext, "video/mp4")
+        
+        # Generate presigned URL for upload (PUT)
+        upload_url = s3_client.generate_presigned_url(
+            "put_object",
+            Params={
+                "Bucket": VIDEO_BUCKET,
+                "Key": s3_key,
+                "ContentType": content_type
+            },
+            ExpiresIn=PRESIGNED_URL_EXPIRY
+        )
+        
+        # Generate presigned URL for viewing (GET)
+        video_url = s3_client.generate_presigned_url(
+            "get_object",
+            Params={
+                "Bucket": VIDEO_BUCKET,
+                "Key": s3_key
+            },
+            ExpiresIn=PRESIGNED_URL_EXPIRY
+        )
+        
+        metadata_item = {
+            # Primary Keys
+            "PK": f"vid#{video_id}",           # Partition Key
+            "SK": "METADATA",                   # Sort Key
+            
+            # Video attributes
+            "video_id": video_id,
+            "filename": filename,
+            "s3_uri": s3_uri,
+            "s3_bucket": VIDEO_BUCKET,
+            "s3_key": s3_key,
+            "content_type": content_type,
+            "uploaded_at": timestamp,
+            
+            # Status tracking
+            "status": "pending_upload",
+            "embedding_status": "pending",
+            "analysis_status": "pending",
+            
+            # GSI1 for querying by status
+            "GSI1PK": "STATUS#pending_upload",
+            "GSI1SK": timestamp
+        }
+        
+        table.put_item(Item=metadata_item)
+        print(f"Saved metadata for video_id: {video_id}")
+        
+        return create_response(200, {
+            "video_id": video_id,
+            "filename": filename,
+            "upload_url": upload_url,
+            "video_url": video_url,
+            "s3_uri": s3_uri,
+            "expires_in": PRESIGNED_URL_EXPIRY,
+            "message": "Upload video using PUT request to upload_url"
+        })
+        
+    except json.JSONDecodeError:
+        return create_response(400, {"error": "Invalid JSON body"})
+    except Exception as e:
+        print(f"Error: {str(e)}")
+        return create_response(500, {"error": str(e)})
+````
+
+4. From the **Configuration** Tab, switch to the **Environment variables** Tab and click **Edit** to enter the environment variables as shown below.
+    - TABLE_NAME: **`video-analysis`**
+    - VIDEO_BUCKET: **`sl-video-analysis-videos-hieu`**
 ![](/images/2-2/04.png?featherlight=false&width=50pc)
 
-5. Next, we enter as below
-   - Policy name: **`AllowReadProductTablePolicy1`**
-   - Click **Create policy**
+5. Next, from the **Configuration** Tab, switch to the **Permissions** Tab and click on the **Role name** as shown below.
 ![](/images/2-2/05.png?featherlight=false&width=50pc)
 
-6. Click **Create policy**.
-
-#### Create AllowReadWriteBasketTablePolicy1
-
-1. Similar to above, click **Policies** in the left sidebar, then **Create policy**.
-
-2. Select the **JSON** tab and paste the following policy:
-
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-                "dynamodb:PutItem",
-                "dynamodb:GetItem",
-                "dynamodb:UpdateItem"
-            ],
-            "Resource": "arn:aws:dynamodb:*:*:table/BasketTable"
-        }
-    ]
-}
-```
-
-3. Click **Next**.
-
-4. Next, we enter as below
-   - Policy name: **`AllowReadWriteBasketTablePolicy1`**
-   - Click **Create policy**
-
+6. From the Role interface, click **Add permissions** and select **Attach policies** as shown below.
 ![](/images/2-2/06.png?featherlight=false&width=50pc)
 
-5. Click **Create policy**.
-
-#### Create AllowWriteOrderingTablePolicy1
-
-1. Similar to above, click **Policies** in the left sidebar, then **Create policy**.
-
-2. Select the **JSON** tab and paste the following policy:
-
-```json
-{
-    "Version": "2012-10-17",
-    "Statement": [
-        {
-            "Effect": "Allow",
-            "Action": [
-               "dynamodb:PutItem",
-               "dynamodb:Scan",
-               "dynamodb:Query"
-            ],
-            "Resource": [
-               "arn:aws:dynamodb:*:*:table/OrderingTable",
-            	"arn:aws:dynamodb:*:*:table/OrderingTable/index/UserOrdersIndex"
-            ]
-        }
-    ]
-}
-```
-
-3. Click **Next**.
-
-4. Next, we enter as below
-   - Policy name: **`AllowWriteOrderingTablePolicy1`**
-   - Click **Create policy**
-
+7. Select **AmazonS3FullAccess** and **AmazonDynamoDBFullAccess** and click **Add permissions**.
 ![](/images/2-2/07.png?featherlight=false&width=50pc)
-
-5. Click **Create policy**.
-
-#### Create AllowPutEventsToDefaultBusPolicy1
-
-1. Similar to above, click **Policies** in the left sidebar, then **Create policy**.
-
-2. Select the **JSON** tab and paste the following policy:
-
-```json
-{
-	"Version": "2012-10-17",
-	"Statement": [
-		{
-			"Effect": "Allow",
-			"Action": "events:PutEvents",
-			"Resource": "arn:aws:events:*:*:event-bus/default"
-		}
-	]
-}
-```
-
-3. Click **Next**.
-
-4. Next, we enter as below
-   - Policy name: **`AllowPutEventsToDefaultBusPolicy1`**
-   - Click **Create policy**
-
 ![](/images/2-2/08.png?featherlight=false&width=50pc)
 
-5. Click **Create policy**.
-
-### Step 2: Create IAM Roles 
-
-#### Create ProductLambdaRole
-
-1. Click **Roles** in the left sidebar, then **Create role**.
-![](/images/2-2/14.png?featherlight=false&width=50pc)
-
-2. Select **AWS service** and choose **Lambda**. Click **Next**.
-![](/images/2-2/09.png?featherlight=false&width=50pc)
-
-4. Search and select policies: **`AllowReadProductTablePolicy1`**, **`AWSLambdaBasicExecutionRole`** and select **Next**
-![](/images/2-2/10.png?featherlight=false&width=50pc)
-
-5. Role name: **`ProductLambdaRole1`**
-![](/images/2-2/11.png?featherlight=false&width=50pc)
-7. Click **Create role**.
-
-#### Create BasketLambdaRole
-
-1. Repeat the same steps with:
-   - Role name: **`BasketLambdaRole1`**
-   - Attach policies: **`AllowPutEventsToDefaultBusPolicy1`**, **`AllowReadWriteBasketTablePolicy1`**, **`AWSLambdaBasicExecutionRole`**
-![](/images/2-2/12.png?featherlight=false&width=50pc)
-
-#### Create OrderingLambdaRole
-
-1. Repeat the same steps with:
-   - Role name: **`OrderingLambdaRole1`**
-   - Attach policies: **`AllowWriteOrderingTablePolicy1`**, **`AWSLambdaBasicExecutionRole`**, **`AWSLambdaSQSQueueExecutionRole`**
-![](/images/2-2/13.png?featherlight=false&width=50pc)
-
-### Verification
-
-After completion, you will have:
-- 4 custom policies with minimal required permissions
-- 3 corresponding IAM roles for each Lambda function
