@@ -1,6 +1,6 @@
 # relativeURLs = true
 # Change the default theme to be use when building the site with Hugo
-baseURL = "https://hieu192.github.io/workshop1-10-2025"
+baseURL = "https://hieu192.github.io/workshop2-12-2025"
 relativeURLs = true
 canonifyURLs = true
 theme = "hugo-theme-learn"
@@ -21,7 +21,7 @@ home = [ "HTML", "RSS", "JSON"]
   # Change default color scheme with a variant one. Can be "red", "blue", "green".
   themeVariant = "workshop"
   # Git hub repo link
-  editURL = "https://hieu192.github.io/workshop1-10-2025"
+  editURL = "https://github.com/Hieu192/workshop2-12-2025/edit/main/content/"
   description = ""
   author = "journeyoftheaverageguy@gmail.com"
   showVisitedLinks = true
@@ -30,7 +30,7 @@ home = [ "HTML", "RSS", "JSON"]
   
 [Languages]
 [Languages.en]
-title = "Start with Amazon VPC and AWS VPN Site-to-Site."
+title = "Video Analysis with Amazon Bedrock and OpenSearch"
 weight = 1
 languageName = "English"
 
@@ -47,7 +47,7 @@ url = "https://www.facebook.com/groups/awsstudygroupfcj"
 weight = 20
 
 [Languages.vi]
-title = "Bắt đầu với Amazon VPC và AWS VPN Site to Site"
+title = "Phân tích Video với Amazon Bedrock và OpenSearch"
 weight = 2
 languageName = "Tiếng Việt"
 
