@@ -6,7 +6,7 @@ chapter : false
 pre : " <b> 1. </b> "
 ---
 
-### Giới thiệu kiến trúc Microservice trên AWS
+### Giới thiệu kiến trúc Phân tích Video trên AWS
 
 Kiến trúc này được xây dựng theo mô hình **Event-Driven (Kiến trúc hướng sự kiện)** và **Serverless**. Mục tiêu chính là tự động hóa quy trình xử lý video từ lúc tải lên cho đến khi có thể tìm kiếm được bằng ngôn ngữ tự nhiên thông qua kỹ thuật Vector Search (sử dụng **Amazon Bedrock** và **OpenSearch**).
 

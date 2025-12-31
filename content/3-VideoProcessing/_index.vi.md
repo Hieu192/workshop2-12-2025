@@ -32,3 +32,4 @@ Khi một video được tải lên S3 hoàn tất, hệ thống sẽ tự độ
 6. [Tạo Lambda kiểm tra trạng thái Job](3.6-CreateLambdaCheck/)
 7. [Tạo OpenSearch Serverless](3.7-CreateOpenSearch/)
 8. [Tạo Lambda Index Vector](3.8-CreateLambdaIndex/)
+9. [Tạo AWS Step Functions điều phối](3.9-CreateStepLambda/)

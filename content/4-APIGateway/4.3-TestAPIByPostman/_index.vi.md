@@ -47,3 +47,33 @@ Sử dụng công cụ Postman để kiểm tra độ chính xác của hệ th�
    - Tua đến đoạn video trả về trong postman và xác nhận kiểm tra.
 
 ![](/images/4-3/04.png?width=50pc)
+
+5. **Tìm kiếm bằng hình ảnh (Image Search)**:
+   - Trong trường hợp bạn muốn tìm kiếm các đoạn video dựa trên một hình ảnh có sẵn.
+   - Đầu tiên, hãy tải hình ảnh mẫu bên dưới về máy tính của bạn:
+   - [**Tải ảnh mẫu tại đây (Chuột phải -> Save Image As)**](/images/4-3/test-image.jpg)
+   
+![](/images/4-3/test-image.jpg?width=30pc)
+
+   - Chuyển đổi hình ảnh này sang định dạng **Base64** (Sử dụng các công cụ online hoặc script).
+   - Gửi yêu cầu POST với cấu hình như sau:
+   - **search_type**: `image`
+   - **image_base64**: (Chuỗi Base64 của ảnh bạn vừa tải)
+
+```json
+{
+    "search_type": "image",
+    "image_base64": "chuỗi base của bạn",
+    "video_id": "8df657ff-88bd-4b2d-84e9-f825feb13810",
+    "modalities": ["visual"],
+    "top_k": 5
+}
+```
+
+![](/images/4-3/05.png?width=50pc)
+
+6. **Xác nhận kết quả Image Search**:
+   - Hệ thống sẽ trả về các đoạn video chứa hình ảnh tương đồng với ảnh mẫu.
+   - Copy đường dẫn `video_url` trả về và mở trên trình duyệt để kiểm tra. Bạn sẽ thấy kết quả chính xác như trong video gốc.
+
+![](/images/4-3/06.png?width=50pc)

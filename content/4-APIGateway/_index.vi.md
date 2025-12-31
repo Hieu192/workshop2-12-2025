@@ -25,3 +25,4 @@ Hệ thống sử dụng mô hình tìm kiếm ngữ nghĩa (Semantic Search) th
 1. [Tạo Lambda tìm kiếm](4.1-CreateLambdaSearch/)
 2. [Cấu hình API Gateway](4.2-CreateLambdaApiGateway/)
 3. [Kiểm thử bằng Postman](4.3-TestAPIByPostman/)
+4. [Kiểm thử bằng CLI](4.4-TestAPIByCLI/)

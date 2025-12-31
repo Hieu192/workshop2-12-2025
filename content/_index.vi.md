@@ -18,7 +18,7 @@ Trong bài workshop này, chúng ta sẽ cùng nhau xây dựng một hệ thố
 
 1. [Giới thiệu](1-introduce/)
 2. [Xây dựng API upload video](2-PreparationSteps/)
-3. [Embedding video và index với Bedrock, OpenSearch](3-ProcessOrderHandler/) 
+3. [Embedding video và index với Bedrock, OpenSearch](3-VideoProcessing/) 
 4. [Xây dựng API tìm kiếm video](4-APIGateway/)
 5. [Các bước tối ưu](5-StepOptimal/)
 6. [Cognito](6-Cognito/)

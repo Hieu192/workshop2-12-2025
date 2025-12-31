@@ -7,7 +7,7 @@ pre : " <b> 2.1 </b> "
 ---
 
 
-Trong bước này, chúng ta sẽ tạo các bảng DynamoDB cần thiết cho ứng dụng microservice.
+Trong bước này, chúng ta sẽ tạo các bảng DynamoDB cần thiết cho hệ thống phân tích video.
 
 ### Tạo video-analysis
 

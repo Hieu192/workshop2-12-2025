@@ -1,14 +1,15 @@
 ---
-title : "Những bước nâng cao tối ưu"
+title : "Phân tích nâng cao với LLM"
 date :  "2024-10-27" 
 weight : 5 
 chapter : false
 pre : " <b> 5. </b> "
 ---
-#### Giới thiệu
-Ở section này, chúng ta sẽ tạo **Dead Letter Queue - DLQ** để xử lý tin nhắn chết và **index userId** cho OrderingTable để tăng tốc độ truy vấn.
 
-#### Nội dung:
+### Phân tích nâng cao với LLM
 
-1. [Tạo SQS Dead xử lý tin nhắn lỗi](5.1-CreateSQSDead)
-2. [Tạo Index để tăng tốc độ truy vấn](5.2-CreateIndex)
+#### 🚧 Sắp ra mắt (Coming Soon)
+
+Phần này sẽ hướng dẫn bạn cách sử dụng các mô hình ngôn ngữ lớn (LLM) để phân tích sâu hơn nội dung video, trả lời các câu hỏi phức tạp hoặc tóm tắt nội dung dựa trên các đoạn embedding đã tìm được.
+
+Nội dung đang được xây dựng!
